@@ -498,7 +498,7 @@ def main():
                         st.error("NO API Key! Please enter an API Key!")
                         continue
                     except Exception as g:
-                        st.error(f"Error processing file: {audio_file[2:]} - Please Try again! (Poor audio quality may be the cause)")
+                        st.error(f"Error processing file: {audio_file[2:]} {str(g)}- Please Try again! (Poor audio quality may be the cause)")
                         continue
     st.markdown("""
         <style>                
