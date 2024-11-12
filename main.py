@@ -100,7 +100,7 @@ def speech_to_text(audio_file):
     # print("Transcript: ", dialog + "  \n\n")
 
     response = client.chat.completions.create(
-        model=os.environ["OPENAI_MODEL"],
+        model="gpt-4o-mini",
         messages=[
         {"role": "system", "content": """Insert speaker labels for a telemarketer and a customer. Return in a JSON format together with the language code. Always translate the transcript fully to English."""},
         {"role": "user", "content": f"The audio transcript is: {dialog}"}
