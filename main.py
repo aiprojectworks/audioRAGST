@@ -105,7 +105,7 @@ def speech_to_text(audio_file):
         {"role": "system", "content": """Insert speaker labels for a telemarketer and a customer. Return in a JSON format together with the language code. Always translate the transcript fully to English."""},
         {"role": "user", "content": f"The audio transcript is: {dialog}"}
         ],
-        temperature=float(os.environ["CHAT_COMPLETION_TEMPERATURE"])
+        temperature=0.1
     )
 
     output = response.choices[0].message.content
