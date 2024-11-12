@@ -91,7 +91,8 @@ def speech_to_text(audio_file):
         model="whisper-1",
         file=open(audio_file, "rb"),
         prompt="Elena Pryor, Samir, Sahil, Mihir, IPP, IPPFA",
-        temperature=float(os.environ["TRANSCRIBE_TEMPERATURE"])
+        temperature= 0.1
+        # temperature=float(os.environ["TRANSCRIBE_TEMPERATURE"])
 
     )
     dialog = transcription.text
