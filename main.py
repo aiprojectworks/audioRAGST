@@ -301,7 +301,7 @@ def handle_userinput(user_question):
         download_history_button()
 
     except Exception as e:
-        st.error(f"The words in this PDF File can't be read by the AI.")
+        st.error(f"The words in this PDF File can't be read by the AI. {e}")
 
 # @st.fragment
 # def submit():
