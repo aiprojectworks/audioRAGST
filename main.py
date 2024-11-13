@@ -485,7 +485,7 @@ def main():
             
                             # Call `rag_process` to handle the generated PDF
                             rag_process([pdf_filename])
-                        displayPDF(pdf_filename)
+                        # displayPDF(pdf_filename)
                         document_interaction()
                         os.remove(pdf_filename)
                     except AuthenticationError as e:
