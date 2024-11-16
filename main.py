@@ -2,20 +2,30 @@ import glob
 import json
 import os
 from openai import OpenAI
+import openai
 import streamlit as st
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, ID3NoHeaderError
+from mutagen.mp3 import MP3, HeaderNotFoundError
 from pydub import AudioSegment
-from fpdf import FPDF
-from fpdf.enums import Align
+# from fpdf import FPDF
+# from fpdf.enums import Align
 import base64
+from openai import AuthenticationError, APIConnectionError
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+import ffmpeg
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
 
 
@@ -64,15 +74,26 @@ user_template = """
 </div>
 """
 
+
+# credential = DefaultAzureCredential()
+# client = SecretClient(vault_url=os.environ["AZURE_KEYVAULT_URL"], credential=credential)
+# key = client.get_secret("OpenAI-API-Key")
+os.environ["OPENAI_API_KEY"] = st.secrets["API_KEY"]
+# st.write(os.environ["OPENAI_API_KEY"])
+openai_model = "gpt-4o"
+transcribe_temp=0.3
+
 def speech_to_text(audio_file):
-    client = OpenAI(api_key=st.secrets["API_KEY"])
+    # client = OpenAI(api_key="sk-nyp-ai-devops-AgMUleAJ6EZILgFu5uaCT3BlbkFJldGad3ZgxG0hp2nhoGlJ")
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
     dialog =""
 
     # Transcribe the audio
     transcription = client.audio.transcriptions.create(
         model="whisper-1",
         file=open(audio_file, "rb"),
-        prompt="Elena Pryor, Samir, Sahil, Mihir, IPP, IPPFA"
+        prompt="Elena Pryor, Samir, Sahil, Mihir, IPP, IPPFA",
+        temperature=transcribe_temp
 
     )
     dialog = transcription.text
@@ -80,12 +101,12 @@ def speech_to_text(audio_file):
     # print("Transcript: ", dialog + "  \n\n")
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=openai_model,
         messages=[
-        {"role": "system", "content": """Insert speaker labels for a telemarketer and a customer. Return in a JSON format together with the original language code. Always translate the transcript fully to English."""},
+        {"role": "system", "content": """Insert speaker labels for a telemarketer and a customer. Return in a JSON format together with the language code. Always translate the transcript fully to English."""},
         {"role": "user", "content": f"The audio transcript is: {dialog}"}
         ],
-        temperature=0
+        temperature= 0
     )
 
     output = response.choices[0].message.content
@@ -218,27 +239,32 @@ def is_valid_mp3(file_path):
         print("File is valid MP3 with duration:", audio.info.length)
         
         # Optional: Check if the file can be loaded with pydub
-        AudioSegment.from_file(file_path)  # This will raise an exception if the file is not valid
+        # AudioSegment.from_file(file_path)  # This will raise an exception if the file is not valid
         
         return True
-    except (ID3NoHeaderError, Exception) as e:
+    except (HeaderNotFoundError, ID3NoHeaderError) as e:
         print(f"Invalid MP3 file: {e}")
-        # create_log_entry(f"Error: Invalid MP3 file: {e}")
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
         return False
 
 def rag_process(pdf_docs):
     # get pdf text
-    raw_text = get_pdf_text(pdf_docs)
+    try:
+        raw_text = get_pdf_text(pdf_docs)
 
-    # get the text chunks
-    text_chunks = get_text_chunks(raw_text)
+        # get the text chunks
+        text_chunks = get_text_chunks(raw_text)
 
-    # create vector store
-    vectorstore = get_vectorstore(text_chunks)
+        # create vector store
+        vectorstore = get_vectorstore(text_chunks)
 
-    # create conversation chain
-    st.session_state.conversation = get_conversation_chain(
-        vectorstore)
+        # create conversation chain
+        st.session_state.conversation = get_conversation_chain(
+            vectorstore)
+    except Exception as e:
+        st.warning(f"Warning: This could be an image-based PDF File")
 
 @st.fragment
 def document_interaction():
@@ -276,7 +302,7 @@ def handle_userinput(user_question):
         download_history_button()
 
     except Exception as e:
-        st.error(f"An error occurred: {e}")
+        st.error(f"The words in this PDF File can't be read by the AI.")
 
 # @st.fragment
 # def submit():
@@ -300,15 +326,26 @@ def displayPDF(file):
     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
     st.markdown(pdf_display, unsafe_allow_html=True)
 
+def check_openai_api_key(api_key):
+    client = openai.OpenAI(api_key=api_key)
+    try:
+        client.models.list()
+    except AuthenticationError:
+        return False
+    else:
+        return True
+
 
 def main():
+    # directory = "./"
+    # delete_mp3_files(directory)
     audio_files = []
     display_is_true = False
     upload_method = False
 
     # Initialize session state to track files and change detection
     if 'uploaded_files' not in st.session_state:
-        st.session_state.uploaded_files = {}
+        st.session_state.uploaded_files = []
     if 'file_change_detected' not in st.session_state:
         st.session_state.file_change_detected = False
     if 'audio_files' not in st.session_state:
@@ -317,10 +354,13 @@ def main():
 
 
     st.set_page_config(page_title="Chat with a PDF",
-                       page_icon=":books:")
-    st.sidebar.title("OpenAI Configuration")
-    os.environ["OPENAI_API_KEY"] = st.secrets["API_KEY"]
-    api_key = st.sidebar.text_input("Enter your OpenAI API key:", value=os.environ["OPENAI_API_KEY"])
+                       page_icon="https://www.ippfa.com/wp-content/uploads/2019/12/eLogo.png")
+    api_key = os.environ['OPENAI_API_KEY']
+    if check_openai_api_key(api_key) == False:
+        api_key = st.sidebar.text_input("Enter your OpenAI API key:", type="password")
+
+    # st.write(api_key)
+
     st.sidebar.markdown('### Need an OpenAI API Key?')
     st.sidebar.markdown(
         "To use this application, you'll need an OpenAI API key. If you don't have one, you can obtain it [here](https://platform.openai.com/api-keys) "
@@ -354,18 +394,16 @@ def main():
             if st.button("Process PDF"):
                 if pdf_doc_for_ai != [None]:
                     with st.spinner("Processing"):
+                        upload_method = True
+                        display_is_true = True
+                        pdf_file_path = os.path.join(os.getcwd(), pdf_docs.name)  # Get the current directory and file name
+                        with open(pdf_file_path, "wb") as f:
+                            f.write(pdf_docs.getbuffer())
                         rag_process(pdf_doc_for_ai)
                     st.write(f"Using PDF File: {pdf_doc_for_ai[-1].name}")
                 else:
                     st.error("No PDF Found!")
 
-    # Add attribution in the app
-    st.markdown(
-        """
-        *RAG*
-        """,
-        unsafe_allow_html=True
-    )
     st.write(css, unsafe_allow_html=True)
 
     if "conversation" not in st.session_state:
@@ -374,6 +412,8 @@ def main():
         st.session_state.chat_history = None
 
     st.header("Chat with a PDF :books:")
+    st.info("Use the sidebar to upload a PDF / Text file and chat with the AI instead of using an audio file.", icon=":material/info:")
+
     uploaded_file = st.file_uploader(
     label="Choose an audio file", 
     label_visibility="collapsed", 
@@ -408,7 +448,7 @@ def main():
         st.session_state.audio_files = []
 
     audio_files = list(st.session_state.audio_files)
-    # print(st.session_state.audio_files)
+    # print(audio_files)
     # print(type(audio_files))
 
 
@@ -424,6 +464,7 @@ def main():
             os.remove(pdf_docs)
         else:
             displayPDF(pdf_docs.name)
+            os.remove(pdf_docs.name)
         document_interaction()
 
 
@@ -431,24 +472,71 @@ def main():
         for audio_file in audio_files:
             if not os.path.isfile(audio_file):
                 st.error(f"{audio_file[2:]} Not Found, Please Try Again!")
+                continue
             else:
                 with st.spinner("Transcribing In Progress..."):
                     # Transcribe the audio to text and detect language
-                    text, language_code = speech_to_text(audio_file)
-                
-                with st.expander(f"{audio_file[2:]} ({language_code})"):
-                    st.write(text)
-                    # print(audio_file)
-                    pdf_filename = pdf_conversion(text, audio_file)
-    
-                    # Call `rag_process` to handle the generated PDF
-                    rag_process([pdf_filename])
-                displayPDF(pdf_filename)
-                os.remove(pdf_filename)
-                    
-        directory = "./"
-        delete_mp3_files(directory)
-        document_interaction()
+                    try:
+                        text, language_code = speech_to_text(audio_file)
+                        with st.expander(f"{audio_file[2:]} ({language_code})"):
+                            st.write(text)
+                            # print(audio_file)
+                            pdf_filename = pdf_conversion(text, audio_file)
+            
+                            # Call `rag_process` to handle the generated PDF
+                            rag_process([pdf_filename])
+                        displayPDF(pdf_filename)
+                        document_interaction()
+                        os.remove(pdf_filename)
+                    except AuthenticationError as e:
+                        error_message = str(e)  # Convert the exception to a string
+                        if "Error code: 401" in error_message:
+                            st.error("Invalid API Key. Please check your API key at https://platform.openai.com/account/api-keys.")
+                        else:
+                            st.error(f"Error: {error_message}")
+                        continue
+                    except APIConnectionError:
+                        st.error("NO API Key! Please enter an API Key!")
+                        continue
+                    except Exception as g:
+                        st.error(f"Error processing file: {audio_file[2:]} - Please Try again! (Poor audio quality may be the cause)")
+                        continue
+    st.markdown("""
+        <style>                
+            .footer {
+                position: relative;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                text-align: center;
+                padding: 10px;
+                font-size: 14px;
+            }
+            .footer img {
+                height: 30px; /* Adjust the logo size as needed */
+                vertical-align: middle;
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+            .footer a {
+                text-decoration: none;
+                color: var(--text-color);
+                }
+            .footer a:hover {
+            color: #007bff;  /* Change to blue on hover */
+            text-decoration: underline;  /* Underline on hover */
+        }
+        </style>
+        <div class="footer">
+            Proudly Presented by <img src="https://www.ippfa.com/wp-content/uploads/2019/12/eLogo.png" alt="Logo"/> |
+            © 2024 IPP Financial Advisers Pte Ltd. All Rights Reserved. <br>
+            <a href="https://maps.app.goo.gl/EwvPRLm7qhvahtaC9" target="_blank">
+                Visit us at 78 Shenton Way #30-01, Singapore 079120
+            </a> |
+            Tel: 65 6511 8888
+        </div>
+    """, unsafe_allow_html=True)
 
 
 def pdf_conversion(text, audio_file=""):
@@ -456,39 +544,27 @@ def pdf_conversion(text, audio_file=""):
         audio_file = "./" + text.name.replace(".txt", "")
         text = text.read().decode("utf-8")
     
-    print(text)
-
-    print(audio_file)
-
-    # Create and configure PDF
-    pdf = FPDF()
-    pdf.add_page()
-
-    # Register and set a Unicode font
-    pdf.add_font("DejaVu", "", "./dejavu-sans/DejaVuSans.ttf", uni=True)
-    pdf.set_font("DejaVu", size=16)
-
-    # Add a title with centered alignment
-    pdf.multi_cell(0, 10, txt=f"Title: {audio_file[2:]}", align='C')
-
-    # Add space after the title
-    pdf.ln(10)
-    pdf.set_font("DejaVu", size=12)
-
-    # Set margins
-    pdf.set_left_margin(10)
-    pdf.set_right_margin(10)
-
-    # Split the text into paragraphs or lines
-    lines = text.split('\n')
-
-    for line in lines:
-        # Add each line to the PDF
-        pdf.multi_cell(0, 10, txt=line, align='L')
-
-    # Save the PDF with the name derived from the audio file
+    # Define the PDF filename based on the audio file
     pdf_filename = f"{os.path.splitext(os.path.basename(audio_file))[0]}.pdf"
-    pdf.output(pdf_filename)
+
+    # Create a SimpleDocTemplate for automatic line wrapping and layout
+    doc = SimpleDocTemplate(pdf_filename, pagesize=A4)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Title
+    title_text = f"Title: {os.path.basename(audio_file)}"
+    title_paragraph = Paragraph(title_text, styles["Title"])
+    elements.append(title_paragraph)
+    elements.append(Spacer(1, 0.2 * inch))
+
+    # Body text
+    body_text = text.replace('\n', '<br />')  # Replace newlines with HTML line breaks
+    body_paragraph = Paragraph(body_text, styles["BodyText"])
+    elements.append(body_paragraph)
+
+    # Build the PDF
+    doc.build(elements)
 
     return pdf_filename
 
