@@ -329,14 +329,32 @@ def handle_userinput(user_question):
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
-def displayPDF(file):
-    # Read the file as binary
-    with open(file, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-    pdf_url = f"data:application/pdf;base64,{base64_pdf}"  # Replace with your PDF URL
+# def displayPDF(file):
+#     # Read the file as binary
+#     with open(file, "rb") as f:
+#         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+#
+#     # Embed the PDF in an iframe
+#     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+#
+#     # Render in Streamlit
+#     st.markdown(pdf_display, unsafe_allow_html=True)
 
-    # Embed the PDF in an iframe
-    # pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+def displayPDF(file):
+    # Save the PDF file locally or to a temporary file
+    with open(file, "rb") as f:
+        pdf_content = f.read()
+
+    # Create a temporary file for the PDF
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+        temp_file.write(pdf_content)
+        temp_pdf_path = temp_file.name
+
+    # Upload the file to a public server or S3 to get a public URL (use your custom hosting logic here)
+    # For now, we simulate with a placeholder URL
+    pdf_url = f"https://example.com/{os.path.basename(temp_pdf_path)}"  # Replace with actual hosting logic
+
+    # Adobe Embed API Viewer
     pdf_display = f"""
     <div id="adobe-dc-view" style="width: 100%; height: 600px;"></div>
     <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
@@ -352,9 +370,8 @@ def displayPDF(file):
         }});
     </script>
     """
-
-    # Render in Streamlit
     st.markdown(pdf_display, unsafe_allow_html=True)
+
 
 def check_openai_api_key(api_key):
     client = openai.OpenAI(api_key=api_key)
