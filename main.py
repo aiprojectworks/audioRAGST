@@ -488,8 +488,8 @@ def main():
             displayPDF(pdf_docs)
             os.remove(pdf_docs)
         else:
-            displayPDF(pdf_docs.name)
-            os.remove(pdf_docs.name)
+            displayPDF(pdf_docs)
+            # os.remove(pdf_docs)
         document_interaction()
 
 
