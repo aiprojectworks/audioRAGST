@@ -4,7 +4,6 @@ import os
 from openai import OpenAI
 import openai
 import streamlit as st
-from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -15,19 +14,15 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, ID3NoHeaderError
 from mutagen.mp3 import MP3, HeaderNotFoundError
 from pydub import AudioSegment
-# from fpdf import FPDF
-# from fpdf.enums import Align
-import base64
 from openai import AuthenticationError, APIConnectionError
-from azure.identity import DefaultAzureCredential
-from azure.keyvault.secrets import SecretClient
-import ffmpeg
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-# from htmlTemplates import css, bot_template, user_template
+import os
 import tempfile
+from PyPDF2.errors import PdfReadError
+from PyPDF2 import PdfReader
 
 
 css = """
@@ -327,33 +322,31 @@ def handle_userinput(user_question):
 #     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
-import os
-import tempfile
-import streamlit as st
-from PyPDF2.errors import PdfReadError
-from PyPDF2 import PdfReader
-
 def displayPDF(file_bytes, file_name="uploaded_file.pdf"):
+    """
+    Render a PDF using PDF.js with error handling.
+    :param file_bytes: Byte content of the PDF file
+    :param file_name: File name for the temporary file
+    """
     try:
-        # Validate the PDF content by trying to read it with PyPDF2
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_validation_file:
-            temp_validation_file.write(file_bytes)
-            temp_validation_file_path = temp_validation_file.name
+        # Validate that file_bytes is in bytes format
+        if not isinstance(file_bytes, (bytes, bytearray)):
+            raise ValueError("Invalid file format: file_bytes must be in binary format (bytes).")
 
-        # Attempt to parse the PDF to ensure it's valid
-        try:
-            PdfReader(temp_validation_file_path)
-        except PdfReadError as e:
-            st.error(f"The uploaded file is not a valid PDF or is corrupted. Error: {e}")
-            return
-        except Exception as e:
-            st.error(f"An unexpected error occurred while validating the PDF. Error: {e}")
-            return
-
-        # Save the valid PDF content to a temporary file
+        # Save file to a temporary location
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
             temp_file.write(file_bytes)
             temp_file_path = temp_file.name
+
+        # Validate PDF file content using PyPDF2
+        try:
+            PdfReader(temp_file_path)  # Check if the file is a valid PDF
+        except PdfReadError:
+            st.error("The uploaded file is not a valid PDF or is corrupted.")
+            return
+        except Exception as e:
+            st.error(f"An error occurred while validating the PDF. Details: {e}")
+            return
 
         # Encode the temporary file path for the PDF.js viewer
         encoded_path = f"file://{os.path.abspath(temp_file_path)}"
@@ -372,6 +365,8 @@ def displayPDF(file_bytes, file_name="uploaded_file.pdf"):
             unsafe_allow_html=True,
         )
 
+    except ValueError as ve:
+        st.error(f"Error: {ve}")
     except OSError as os_error:
         st.error(f"Error while saving or accessing the temporary file. Details: {os_error}")
     except Exception as general_error:
@@ -459,15 +454,15 @@ def main():
                 if pdf_docs is not None:
                     with st.spinner("Processing..."):
                         try:
-                            # Read the uploaded file as binary content
+                            # Read binary content from the uploaded file
                             pdf_bytes = pdf_docs.read()  # Ensure we read the binary content
 
-                            # Pass the binary content to displayPDF
+                            # Pass binary content to the displayPDF function
                             displayPDF(pdf_bytes, pdf_docs.name)
 
                             st.success("PDF successfully processed!")
                         except Exception as e:
-                            st.error(f"An error occurred: {e}")
+                            st.error(f"An unexpected error occurred: {e}")
 
     st.write(css, unsafe_allow_html=True)
 
