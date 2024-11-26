@@ -80,7 +80,6 @@ user_template = """
 # client = SecretClient(vault_url=os.environ["AZURE_KEYVAULT_URL"], credential=credential)
 # key = client.get_secret("OpenAI-API-Key")
 os.environ["OPENAI_API_KEY"] = st.secrets["API_KEY"]
-os.environ["ADOBE_API_KEY"] = st.secrets["ADOBE_API_KEY"]
 # st.write(os.environ["OPENAI_API_KEY"])
 openai_model = "gpt-4o"
 transcribe_temp=0.3
