@@ -331,22 +331,39 @@ def handle_userinput(user_question):
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
 def displayPDF(file):
-    """
-    Display a PDF file using the streamlit-pdf-viewer library.
+    try:
+        # Read the PDF file
+        if isinstance(file, str):
+            if not file.lower().endswith(".pdf"):
+                raise ValueError("The file is not a valid PDF.")
+            try:
+                with open(file, "rb") as f:
+                    pdf_data = f.read()
+            except FileNotFoundError:
+                raise FileNotFoundError(f"File not found: {file}")
+            except IOError as e:
+                raise IOError(f"Error reading the file: {e}")
+        else:
+            if not hasattr(file, "read"):
+                raise ValueError("Provided file is not a valid file-like object.")
+            try:
+                pdf_data = file.read()
+                if not file.name.lower().endswith(".pdf"):
+                    raise ValueError("The uploaded file is not a PDF.")
+            except Exception as e:
+                raise IOError(f"Error reading the uploaded file: {e}")
 
-    Parameters:
-        file (str or file-like object): Path to the PDF file or a file-like object.
-    """
-    if isinstance(file, str):
-        # If the input is a file path, open and read the file
-        with open(file, "rb") as f:
-            pdf_data = f.read()
-    else:
-        # If the input is a file-like object (e.g., uploaded file), read it directly
-        pdf_data = file.read()
+        # Use the streamlit-pdf-viewer to display the PDF
+        pdf_viewer(data=pdf_data, width=700, height=600)
 
-    # Use the streamlit-pdf-viewer to display the PDF
-    pdf_viewer(data=pdf_data, width=700, height=600)
+    except FileNotFoundError as e:
+        st.error(f"File error: {e}")
+    except ValueError as e:
+        st.error(f"Invalid file: {e}")
+    except IOError as e:
+        st.error(f"IO error: {e}")
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
 
 
 
