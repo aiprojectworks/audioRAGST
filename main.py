@@ -332,69 +332,35 @@ def handle_userinput(user_question):
 
 def displayPDF(file):
     try:
-        # Check if the file is not None and has a valid name
-        if not file or not file.name.endswith(".pdf"):
+        # If `file` is a string, assume it's a file path
+        if isinstance(file, str):
+            with open(file, "rb") as f:
+                binary = f.read()
+        elif file is not None and hasattr(file, "read"):
+            # If it's a file-like object
+            binary = file.read()
+        else:
             st.error("Invalid file type. Please upload a PDF.")
             return
 
-        binary = file.read()
-        if not binary:
-            st.error("Failed to read the file. Please try uploading again.")
-            return
+        st.session_state['binary'] = binary
 
-        st.session_state['binary'] = binary  # Store for session reuse
-
-        # Dummy annotations list (in actual implementation, annotations should come from processing the file)
-        annotations = st.session_state.get('annotations', [])
-        if not isinstance(annotations, list):
-            st.error("Annotations are not in the correct format. Expected a list of annotations.")
-            return
-
-        # Dynamic settings from Streamlit UI
-        width = st.session_state.get('pdf_width', 700)
-        height = st.session_state.get('pdf_height', -1)
-        annotation_thickness = st.session_state.get('annotation_thickness', 1)
-        pages_vertical_spacing = st.session_state.get('pages_vertical_spacing', 2)
-        resolution_boost = st.session_state.get('resolution_boost', 1)
-        enable_text = st.session_state.get('enable_text', False)
-        page_selection = st.session_state.get('page_selection', [])
-
-        # Check if binary content exists before rendering
-        if not st.session_state['binary']:
-            st.error("No file content found for rendering. Please upload a valid PDF.")
-            return
-
-        # Rendering the PDF with options
+        # Proceed with rendering
         st.write("Rendering PDF...")
-        try:
-            if height > -1:
-                pdf_viewer(
-                    input=binary,
-                    width=width,
-                    height=height,
-                    annotations=annotations,
-                    pages_vertical_spacing=pages_vertical_spacing,
-                    annotation_outline_size=annotation_thickness,
-                    pages_to_render=page_selection,
-                    render_text=enable_text,
-                    resolution_boost=resolution_boost
-                )
-            else:
-                pdf_viewer(
-                    input=binary,
-                    width=width,
-                    annotations=annotations,
-                    pages_vertical_spacing=pages_vertical_spacing,
-                    annotation_outline_size=annotation_thickness,
-                    pages_to_render=page_selection,
-                    render_text=enable_text,
-                    resolution_boost=resolution_boost
-                )
-        except Exception as render_error:
-            st.error(f"Error rendering the PDF: {render_error}")
-
+        pdf_viewer(
+            input=binary,
+            width=st.session_state.get('pdf_width', 700),
+            height=st.session_state.get('pdf_height', -1),
+            annotations=st.session_state.get('annotations', []),
+            pages_vertical_spacing=st.session_state.get('pages_vertical_spacing', 2),
+            annotation_outline_size=st.session_state.get('annotation_thickness', 1),
+            pages_to_render=st.session_state.get('page_selection', []),
+            render_text=st.session_state.get('enable_text', False),
+            resolution_boost=st.session_state.get('resolution_boost', 1)
+        )
     except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
+        st.error(f"An error occurred while rendering the PDF: {e}")
+
 
 
 def check_openai_api_key(api_key):
@@ -610,34 +576,66 @@ def main():
     """, unsafe_allow_html=True)
 
 
+# def pdf_conversion(text, audio_file=""):
+#     if audio_file == "":
+#         audio_file = "./" + text.name.replace(".txt", "")
+#         text = text.read().decode("utf-8")
+#
+#     # Define the PDF filename based on the audio file
+#     pdf_filename = f"{os.path.splitext(os.path.basename(audio_file))[0]}.pdf"
+#
+#     # Create a SimpleDocTemplate for automatic line wrapping and layout
+#     doc = SimpleDocTemplate(pdf_filename, pagesize=A4)
+#     styles = getSampleStyleSheet()
+#     elements = []
+#
+#     # Title
+#     title_text = f"Title: {os.path.basename(audio_file)}"
+#     title_paragraph = Paragraph(title_text, styles["Title"])
+#     elements.append(title_paragraph)
+#     elements.append(Spacer(1, 0.2 * inch))
+#
+#     # Body text
+#     body_text = text.replace('\n', '<br />')  # Replace newlines with HTML line breaks
+#     body_paragraph = Paragraph(body_text, styles["BodyText"])
+#     elements.append(body_paragraph)
+#
+#     # Build the PDF
+#     doc.build(elements)
+#
+#     return pdf_filename
+
 def pdf_conversion(text, audio_file=""):
-    if audio_file == "":
-        audio_file = "./" + text.name.replace(".txt", "")
-        text = text.read().decode("utf-8")
-    
-    # Define the PDF filename based on the audio file
-    pdf_filename = f"{os.path.splitext(os.path.basename(audio_file))[0]}.pdf"
+    try:
+        if audio_file:  # If audio file is provided
+            pdf_filename = f"{os.path.splitext(os.path.basename(audio_file))[0]}.pdf"
+        elif hasattr(text, "name"):  # If text file is uploaded
+            pdf_filename = f"{os.path.splitext(os.path.basename(text.name))[0]}.pdf"
+            text = text.read().decode("utf-8")
+        else:
+            st.error("Invalid input for PDF conversion.")
+            return None
 
-    # Create a SimpleDocTemplate for automatic line wrapping and layout
-    doc = SimpleDocTemplate(pdf_filename, pagesize=A4)
-    styles = getSampleStyleSheet()
-    elements = []
+        # Create the PDF
+        doc = SimpleDocTemplate(pdf_filename, pagesize=A4)
+        styles = getSampleStyleSheet()
+        elements = []
 
-    # Title
-    title_text = f"Title: {os.path.basename(audio_file)}"
-    title_paragraph = Paragraph(title_text, styles["Title"])
-    elements.append(title_paragraph)
-    elements.append(Spacer(1, 0.2 * inch))
+        # Title
+        title_text = f"Title: {os.path.basename(pdf_filename)}"
+        elements.append(Paragraph(title_text, styles["Title"]))
+        elements.append(Spacer(1, 0.2 * inch))
 
-    # Body text
-    body_text = text.replace('\n', '<br />')  # Replace newlines with HTML line breaks
-    body_paragraph = Paragraph(body_text, styles["BodyText"])
-    elements.append(body_paragraph)
+        # Body
+        body_text = text.replace('\n', '<br />')
+        elements.append(Paragraph(body_text, styles["BodyText"]))
 
-    # Build the PDF
-    doc.build(elements)
+        doc.build(elements)
+        return pdf_filename
+    except Exception as e:
+        st.error(f"Error converting to PDF: {e}")
+        return None
 
-    return pdf_filename
 
 if __name__ == '__main__':
     main()
