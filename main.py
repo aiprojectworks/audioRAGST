@@ -330,7 +330,7 @@ def handle_userinput(user_question):
 #     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
-def displayPDF(file, width=700, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
+def displayPDF(file, width="100%", height="90vh", enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
     try:
         # Determine the input binary data
         if isinstance(file, str):
