@@ -330,13 +330,26 @@ def handle_userinput(user_question):
 #     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
-def displayPDF(file, width="100%", height="90vh", enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
+
+def displayPDF(file, width=800, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
+    """
+    Display a PDF file using the streamlit-pdf-viewer library, centered and filling the container.
+
+    Parameters:
+        file (str or file-like object): Path to the PDF file or a file-like object.
+        width (int): Width of the viewer (default 800 pixels).
+        height (int): Height of the viewer (default 600 pixels).
+        enable_text (bool): Enable or disable text rendering.
+        resolution_boost (int): Boost resolution for better clarity (1 is default).
+        annotations (list): Optional annotations to display on the PDF.
+        pages_vertical_spacing (int): Vertical spacing between pages.
+        annotation_thickness (int): Outline thickness of annotations.
+    """
     try:
-        # Determine the input binary data
+        # Read binary content
         if isinstance(file, str):
             if not file.lower().endswith(".pdf"):
                 raise ValueError("The file is not a valid PDF.")
-            # Read the binary content of the file
             with open(file, "rb") as f:
                 pdf_binary = f.read()
         else:
@@ -344,20 +357,36 @@ def displayPDF(file, width="100%", height="90vh", enable_text=True, resolution_b
                 raise ValueError("Provided file is not a valid file-like object.")
             if not file.name.lower().endswith(".pdf"):
                 raise ValueError("The uploaded file is not a PDF.")
-            # Read the binary content of the uploaded file
             pdf_binary = file.read()
 
-        # Use the pdf_viewer with binary data as input
+        # Center the PDF viewer with custom CSS
+        st.markdown(
+            """
+            <style>
+                .center-pdf {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%;
+                }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # Wrap the viewer in a centered div
+        st.markdown('<div class="center-pdf">', unsafe_allow_html=True)
         pdf_viewer(
             input=pdf_binary,
-            width=width,
-            height=height,
+            width=int(width),  # Convert width to integer
+            height=int(height),  # Convert height to integer
             annotations=annotations,
             pages_vertical_spacing=pages_vertical_spacing,
             annotation_outline_size=annotation_thickness,
             render_text=enable_text,
             resolution_boost=resolution_boost
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
     except FileNotFoundError as e:
         st.error(f"File error: {e}")
