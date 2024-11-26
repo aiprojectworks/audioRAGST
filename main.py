@@ -327,20 +327,17 @@ def handle_userinput(user_question):
 #     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
+
 def displayPDF(file):
-    # Open the PDF file in binary mode
+    # Read the file as binary
     with open(file, "rb") as f:
-        pdf_content = f.read()
+        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
 
-    # Write the binary content to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(pdf_content)  # Write the raw binary content (not base64-encoded)
-        temp_file_path = tmp_file.name  # Get the path of the temporary file
+    # Embed the PDF in an iframe
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
 
-    # Use the file:// URI to display the PDF in an iframe
-    pdf_display = f'<iframe src="file://{temp_file_path}" width="700" height="600" type="application/pdf"></iframe>'
+    # Render in Streamlit
     st.markdown(pdf_display, unsafe_allow_html=True)
-
 
 def check_openai_api_key(api_key):
     client = openai.OpenAI(api_key=api_key)
