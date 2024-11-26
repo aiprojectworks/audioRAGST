@@ -28,7 +28,6 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
 from streamlit_pdf_viewer import pdf_viewer
-import io
 
 
 
@@ -324,95 +323,11 @@ def handle_userinput(user_question):
     
 #     user_question = st.text_input("Ask a question about your documents:", on_change=submit, key='widget', )
 
-# def displayPDF(file):
-#     with open(file, "rb") as f:
-#         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-#     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
-#     st.markdown(pdf_display, unsafe_allow_html=True)
-
-
 def displayPDF(file):
-    try:
-        # Check if `file` is a string (file path) or a file-like object
-        if isinstance(file, str):
-            with open(file, "rb") as f:
-                binary = f.read()
-        else:
-            binary = file.read()
-
-        if not binary:
-            st.error("Failed to read the file. Please try uploading again.")
-            return
-
-        # Validate the PDF file content before rendering
-        try:
-            from PyPDF2 import PdfReader
-            pdf_reader = PdfReader(io.BytesIO(binary))  # Use io.BytesIO for binary content
-            assert len(pdf_reader.pages) > 0, "PDF file has no readable pages."
-        except Exception as e:
-            st.error(f"Invalid PDF file: {e}")
-            return
-
-        st.session_state['binary'] = binary  # Store for session reuse
-
-        # Ensure annotations and page_selection are lists
-        annotations = st.session_state.get('annotations', [])
-        if annotations is None or not isinstance(annotations, list):
-            annotations = []  # Default to an empty list if invalid
-
-        page_selection = st.session_state.get('page_selection', [])
-        if page_selection is None or not isinstance(page_selection, list):
-            page_selection = []  # Default to an empty list if invalid
-
-        # Dynamic settings from Streamlit UI
-        width = st.session_state.get('pdf_width', 700)
-        height = st.session_state.get('pdf_height', -1)
-        annotation_thickness = st.session_state.get('annotation_thickness', 1)
-        pages_vertical_spacing = st.session_state.get('pages_vertical_spacing', 2)
-        resolution_boost = st.session_state.get('resolution_boost', 1)
-        enable_text = st.session_state.get('enable_text', False)
-
-        # Debugging: Log parameters
-        st.write("Debugging `pdf_viewer` inputs:")
-        st.write({
-            "binary_type": type(binary),
-            "binary_length": len(binary) if binary else 0,
-            "width": width,
-            "height": height,
-            "annotations_type": type(annotations),
-            "annotations_length": len(annotations) if annotations else 0,
-            "pages_to_render": page_selection,
-            "annotation_outline_size": annotation_thickness,
-            "pages_vertical_spacing": pages_vertical_spacing,
-            "render_text": enable_text,
-            "resolution_boost": resolution_boost
-        })
-
-        # Validate `pages_to_render` for `pdf_viewer`
-        if not page_selection:
-            from PyPDF2 import PdfReader
-            pdf_reader = PdfReader(io.BytesIO(binary))
-            page_selection = list(range(len(pdf_reader.pages)))  # Default to all pages if none selected
-
-        # Rendering the PDF
-        st.write("Rendering PDF...")
-        try:
-            pdf_viewer(
-                input=binary,
-                width=width,
-                height=height if height > -1 else None,
-                annotations=annotations if annotations else None,  # Default to None if empty
-                pages_vertical_spacing=pages_vertical_spacing,
-                annotation_outline_size=annotation_thickness,
-                pages_to_render=page_selection if page_selection else None,
-                render_text=enable_text,
-                resolution_boost=resolution_boost
-            )
-        except Exception as render_error:
-            st.error(f"Error rendering the PDF: {render_error}")
-
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
+    with open(file, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
 
 def check_openai_api_key(api_key):
@@ -547,21 +462,13 @@ def main():
         # create_log_entry("Service Request: Fail (No Files Uploaded)")
         st.error("No Files Uploaded, Please Try Again!")
 
-    # elif display_is_true and upload_method:
-    #     if isinstance(pdf_docs, str):
-    #         displayPDF(pdf_docs)
-    #         os.remove(pdf_docs)
-    #     else:
-    #         displayPDF(pdf_docs.name)
-    #         os.remove(pdf_docs.name)
     elif display_is_true and upload_method:
-        # Check if `pdf_docs` is already a file-like object
         if isinstance(pdf_docs, str):
-            displayPDF(pdf_docs)  # Pass the file path for handling
-            os.remove(pdf_docs)  # Cleanup
+            displayPDF(pdf_docs)
+            os.remove(pdf_docs)
         else:
-            displayPDF(pdf_docs)  # Directly use the file-like object
-
+            displayPDF(pdf_docs.name)
+            os.remove(pdf_docs.name)
         document_interaction()
 
 
@@ -698,11 +605,4 @@ def pdf_conversion(text, audio_file=""):
 
 
 if __name__ == '__main__':
-    if "pdf_width" not in st.session_state:
-        st.session_state["pdf_width"] = 700
-    if "pdf_height" not in st.session_state:
-        st.session_state["pdf_height"] = -1
-    if "annotations" not in st.session_state:
-        st.session_state["annotations"] = []
-
     main()
