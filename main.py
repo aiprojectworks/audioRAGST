@@ -341,20 +341,17 @@ def handle_userinput(user_question):
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
 def displayPDF(file):
-    # Save the PDF file locally or to a temporary file
+    # Read the PDF file as binary
     with open(file, "rb") as f:
         pdf_content = f.read()
 
-    # Create a temporary file for the PDF
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-        temp_file.write(pdf_content)
-        temp_pdf_path = temp_file.name
+    # Convert to base64 for embedding or download
+    base64_pdf = base64.b64encode(pdf_content).decode("utf-8")
 
-    # Upload the file to a public server or S3 to get a public URL (use your custom hosting logic here)
-    # For now, we simulate with a placeholder URL
-    pdf_url = f"https://example.com/{os.path.basename(temp_pdf_path)}"  # Replace with actual hosting logic
+    # Create a download link for the PDF within Streamlit
+    href = f'<a href="data:application/pdf;base64,{base64_pdf}" download="document.pdf">Click here to download the PDF</a>'
 
-    # Adobe Embed API Viewer
+    # Use Adobe Embed API Viewer
     pdf_display = f"""
     <div id="adobe-dc-view" style="width: 100%; height: 600px;"></div>
     <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
@@ -362,15 +359,20 @@ def displayPDF(file):
         document.addEventListener("adobe_dc_view_sdk.ready", function() {{
             var adobeDCView = new AdobeDC.View({{ clientId: "{os.environ['ADOBE_API_KEY']}", divId: "adobe-dc-view" }});
             adobeDCView.previewFile({{
-                content: {{ location: {{ url: "{pdf_url}" }} }},
-                metaData: {{ fileName: "sample.pdf" }}
+                content: {{ location: {{ url: "data:application/pdf;base64,{base64_pdf}" }} }},
+                metaData: {{ fileName: "document.pdf" }}
             }}, {{
-                embedMode: "SIZED_CONTAINER"  // Modes: SIZED_CONTAINER, FULL_WINDOW, etc.
+                embedMode: "SIZED_CONTAINER"
             }});
         }});
     </script>
+    <br>
+    {href}
     """
+
+    # Render the PDF display or download link in Streamlit
     st.markdown(pdf_display, unsafe_allow_html=True)
+
 
 
 def check_openai_api_key(api_key):
