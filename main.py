@@ -27,6 +27,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
+import PyPDF2
 from streamlit_pdf_viewer import pdf_viewer
 
 
@@ -323,18 +324,29 @@ def handle_userinput(user_question):
     
 #     user_question = st.text_input("Ask a question about your documents:", on_change=submit, key='widget', )
 
-def displayPDF(file):
-    with open(file, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-    # pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
-    pdf_display = f"""<embed
-       class="pdfobject"
-       type="application/pdf"
-       title="Embedded PDF"
-       src="data:application/pdf;base64,{base64_pdf}"
-       style="overflow: auto; width: 100%; height: 100%;">"""
-    st.markdown(pdf_display, unsafe_allow_html=True)
+# def displayPDF(file):
+#     with open(file, "rb") as f:
+#         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+#     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+#     st.markdown(pdf_display, unsafe_allow_html=True)
 
+def displayPDF(file):
+    """
+    Display a PDF file using the streamlit-pdf-viewer library.
+
+    Parameters:
+        file (str or file-like object): Path to the PDF file or a file-like object.
+    """
+    if isinstance(file, str):
+        # If the input is a file path, open and read the file
+        with open(file, "rb") as f:
+            pdf_data = f.read()
+    else:
+        # If the input is a file-like object (e.g., uploaded file), read it directly
+        pdf_data = file.read()
+
+    # Use the streamlit-pdf-viewer to display the PDF
+    pdf_viewer(data=pdf_data, width=700, height=600)
 
 
 
@@ -469,6 +481,7 @@ def main():
     if submit and audio_files == []:
         # create_log_entry("Service Request: Fail (No Files Uploaded)")
         st.error("No Files Uploaded, Please Try Again!")
+
 
     elif display_is_true and upload_method:
         if isinstance(pdf_docs, str):
