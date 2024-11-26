@@ -443,18 +443,31 @@ def main():
             st.subheader("Upload Your PDF Document")
             pdf_docs = st.file_uploader("Upload your PDF here and click on 'Process'", accept_multiple_files=False, type="pdf")
             pdf_doc_for_ai = [pdf_docs]
+            # if st.button("Process PDF"):
+            #     if pdf_doc_for_ai != [None]:
+            #         with st.spinner("Processing"):
+            #             upload_method = True
+            #             display_is_true = True
+            #             pdf_file_path = os.path.join(os.getcwd(), pdf_docs.name)  # Get the current directory and file name
+            #             with open(pdf_file_path, "wb") as f:
+            #                 f.write(pdf_docs.getbuffer())
+            #             rag_process(pdf_doc_for_ai)
+            #         st.write(f"Using PDF File: {pdf_doc_for_ai[-1].name}")
+            #     else:
+            #         st.error("No PDF Found!")
             if st.button("Process PDF"):
-                if pdf_doc_for_ai != [None]:
-                    with st.spinner("Processing"):
-                        upload_method = True
-                        display_is_true = True
-                        pdf_file_path = os.path.join(os.getcwd(), pdf_docs.name)  # Get the current directory and file name
-                        with open(pdf_file_path, "wb") as f:
-                            f.write(pdf_docs.getbuffer())
-                        rag_process(pdf_doc_for_ai)
-                    st.write(f"Using PDF File: {pdf_doc_for_ai[-1].name}")
-                else:
-                    st.error("No PDF Found!")
+                if pdf_docs is not None:
+                    with st.spinner("Processing..."):
+                        try:
+                            # Read the uploaded file as binary content
+                            pdf_bytes = pdf_docs.read()  # Ensure we read the binary content
+
+                            # Pass the binary content to displayPDF
+                            displayPDF(pdf_bytes, pdf_docs.name)
+
+                            st.success("PDF successfully processed!")
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
 
     st.write(css, unsafe_allow_html=True)
 
