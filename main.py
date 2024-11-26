@@ -329,18 +329,18 @@ def displayPDF(file_bytes, file_name="uploaded_file.pdf"):
     :param file_name: File name for the temporary file
     """
     try:
-        # Validate that file_bytes is in bytes format
+        # Debugging: Print file type to ensure it's bytes
         if not isinstance(file_bytes, (bytes, bytearray)):
             raise ValueError("Invalid file format: file_bytes must be in binary format (bytes).")
 
-        # Save file to a temporary location
+        # Save the binary content to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
             temp_file.write(file_bytes)
             temp_file_path = temp_file.name
 
-        # Validate PDF file content using PyPDF2
+        # Validate the file as a PDF
         try:
-            PdfReader(temp_file_path)  # Check if the file is a valid PDF
+            PdfReader(temp_file_path)  # Validate the file
         except PdfReadError:
             st.error("The uploaded file is not a valid PDF or is corrupted.")
             return
@@ -348,11 +348,9 @@ def displayPDF(file_bytes, file_name="uploaded_file.pdf"):
             st.error(f"An error occurred while validating the PDF. Details: {e}")
             return
 
-        # Encode the temporary file path for the PDF.js viewer
-        encoded_path = f"file://{os.path.abspath(temp_file_path)}"
-
         # Render the PDF using PDF.js in an iframe
         pdfjs_url = "https://mozilla.github.io/pdf.js/web/viewer.html"
+        encoded_path = f"file://{os.path.abspath(temp_file_path)}"
         st.markdown(
             f"""
             <iframe 
@@ -454,10 +452,13 @@ def main():
                 if pdf_docs is not None:
                     with st.spinner("Processing..."):
                         try:
-                            # Read binary content from the uploaded file
-                            pdf_bytes = pdf_docs.read()  # Ensure we read the binary content
+                            # Ensure file content is read in binary format
+                            pdf_bytes = pdf_docs.read()  # This will read the file content as bytes
 
-                            # Pass binary content to the displayPDF function
+                            # Debugging: Print file type to confirm it’s in binary
+                            st.write(f"File type: {type(pdf_bytes)}")  # Should output <class 'bytes'>
+
+                            # Pass the binary content to displayPDF
                             displayPDF(pdf_bytes, pdf_docs.name)
 
                             st.success("PDF successfully processed!")
