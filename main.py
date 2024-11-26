@@ -80,6 +80,7 @@ user_template = """
 # client = SecretClient(vault_url=os.environ["AZURE_KEYVAULT_URL"], credential=credential)
 # key = client.get_secret("OpenAI-API-Key")
 os.environ["OPENAI_API_KEY"] = st.secrets["API_KEY"]
+os.environ["ADOBE_API_KEY"] = st.secrets["ADOBE_API_KEY"]
 # st.write(os.environ["OPENAI_API_KEY"])
 openai_model = "gpt-4o"
 transcribe_temp=0.3
@@ -332,9 +333,25 @@ def displayPDF(file):
     # Read the file as binary
     with open(file, "rb") as f:
         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+    pdf_url = f"data:application/pdf;base64,{base64_pdf}"  # Replace with your PDF URL
 
     # Embed the PDF in an iframe
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+    # pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+    pdf_display = f"""
+    <div id="adobe-dc-view" style="width: 100%; height: 600px;"></div>
+    <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+    <script type="text/javascript">
+        document.addEventListener("adobe_dc_view_sdk.ready", function() {{
+            var adobeDCView = new AdobeDC.View({{ clientId: "{os.environ['ADOBE_API_KEY']}", divId: "adobe-dc-view" }});
+            adobeDCView.previewFile({{
+                content: {{ location: {{ url: "{pdf_url}" }} }},
+                metaData: {{ fileName: "sample.pdf" }}
+            }}, {{
+                embedMode: "SIZED_CONTAINER"  // Modes: SIZED_CONTAINER, FULL_WINDOW, etc.
+            }});
+        }});
+    </script>
+    """
 
     # Render in Streamlit
     st.markdown(pdf_display, unsafe_allow_html=True)
