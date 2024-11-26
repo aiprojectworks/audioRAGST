@@ -345,15 +345,14 @@ def displayPDF(file):
 
         st.session_state['binary'] = binary  # Store for session reuse
 
-        # Ensure annotations are a list
+        # Ensure annotations and page_selection are lists
         annotations = st.session_state.get('annotations', [])
-        if annotations is None:
-            annotations = []  # Default to empty list
+        if annotations is None or not isinstance(annotations, list):
+            annotations = []  # Default to an empty list if invalid
 
-        # Ensure page_selection is a list
         page_selection = st.session_state.get('page_selection', [])
-        if page_selection is None:
-            page_selection = []
+        if page_selection is None or not isinstance(page_selection, list):
+            page_selection = []  # Default to an empty list if invalid
 
         # Dynamic settings from Streamlit UI
         width = st.session_state.get('pdf_width', 700)
@@ -363,7 +362,21 @@ def displayPDF(file):
         resolution_boost = st.session_state.get('resolution_boost', 1)
         enable_text = st.session_state.get('enable_text', False)
 
-        # Rendering the PDF with options
+        # Debugging: Log parameters
+        st.write("Debugging `pdf_viewer` inputs:")
+        st.write({
+            "binary": bool(binary),  # Check if binary data exists
+            "width": width,
+            "height": height,
+            "annotations": annotations,
+            "pages_to_render": page_selection,
+            "annotation_outline_size": annotation_thickness,
+            "pages_vertical_spacing": pages_vertical_spacing,
+            "render_text": enable_text,
+            "resolution_boost": resolution_boost
+        })
+
+        # Rendering the PDF
         st.write("Rendering PDF...")
         try:
             pdf_viewer(
@@ -382,8 +395,6 @@ def displayPDF(file):
 
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
-
-
 
 
 
@@ -671,4 +682,11 @@ def pdf_conversion(text, audio_file=""):
 
 
 if __name__ == '__main__':
+    if "pdf_width" not in st.session_state:
+        st.session_state["pdf_width"] = 700
+    if "pdf_height" not in st.session_state:
+        st.session_state["pdf_height"] = -1
+    if "annotations" not in st.session_state:
+        st.session_state["annotations"] = []
+
     main()
