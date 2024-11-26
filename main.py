@@ -343,6 +343,15 @@ def displayPDF(file):
             st.error("Failed to read the file. Please try uploading again.")
             return
 
+        # Validate the PDF file content before rendering
+        try:
+            from PyPDF2 import PdfReader
+            pdf_reader = PdfReader(io.BytesIO(binary))
+            assert len(pdf_reader.pages) > 0, "PDF file has no readable pages."
+        except Exception as e:
+            st.error(f"Invalid PDF file: {e}")
+            return
+
         st.session_state['binary'] = binary  # Store for session reuse
 
         # Ensure annotations and page_selection are lists
@@ -365,10 +374,12 @@ def displayPDF(file):
         # Debugging: Log parameters
         st.write("Debugging `pdf_viewer` inputs:")
         st.write({
-            "binary": bool(binary),  # Check if binary data exists
+            "binary_type": type(binary),
+            "binary_length": len(binary) if binary else 0,
             "width": width,
             "height": height,
-            "annotations": annotations,
+            "annotations_type": type(annotations),
+            "annotations_length": len(annotations) if annotations else 0,
             "pages_to_render": page_selection,
             "annotation_outline_size": annotation_thickness,
             "pages_vertical_spacing": pages_vertical_spacing,
@@ -383,10 +394,10 @@ def displayPDF(file):
                 input=binary,
                 width=width,
                 height=height if height > -1 else None,
-                annotations=annotations,
+                annotations=annotations if annotations else None,  # Default to None if empty
                 pages_vertical_spacing=pages_vertical_spacing,
                 annotation_outline_size=annotation_thickness,
-                pages_to_render=page_selection if page_selection else None,
+                pages_to_render=page_selection if page_selection else None,  # Default to None if empty
                 render_text=enable_text,
                 resolution_boost=resolution_boost
             )
