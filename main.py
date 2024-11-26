@@ -27,7 +27,8 @@ from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
-import tempfile
+from streamlit_pdf_viewer import pdf_viewer
+
 
 
 css = """
@@ -329,50 +330,16 @@ def handle_userinput(user_question):
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
-# def displayPDF(file):
-#     # Read the file as binary
-#     with open(file, "rb") as f:
-#         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-#
-#     # Embed the PDF in an iframe
-#     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
-#
-#     # Render in Streamlit
-#     st.markdown(pdf_display, unsafe_allow_html=True)
+def displayPDF(pdf_file):
+    # Check if a PDF file is provided
+    if pdf_file is not None:
+        # Extract binary data from the uploaded PDF file
+        binary_data = pdf_file.getvalue()
 
-def displayPDF(file):
-    # Read the PDF file as binary
-    with open(file, "rb") as f:
-        pdf_content = f.read()
-
-    # Convert to base64 for embedding or download
-    base64_pdf = base64.b64encode(pdf_content).decode("utf-8")
-
-    # Create a download link for the PDF within Streamlit
-    href = f'<a href="data:application/pdf;base64,{base64_pdf}" download="document.pdf">Click here to download the PDF</a>'
-
-    # Use Adobe Embed API Viewer
-    pdf_display = f"""
-    <div id="adobe-dc-view" style="width: 100%; height: 600px;"></div>
-    <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
-    <script type="text/javascript">
-        document.addEventListener("adobe_dc_view_sdk.ready", function() {{
-            var adobeDCView = new AdobeDC.View({{ clientId: "{os.environ['ADOBE_API_KEY']}", divId: "adobe-dc-view" }});
-            adobeDCView.previewFile({{
-                content: {{ location: {{ url: "data:application/pdf;base64,{base64_pdf}" }} }},
-                metaData: {{ fileName: "document.pdf" }}
-            }}, {{
-                embedMode: "SIZED_CONTAINER"
-            }});
-        }});
-    </script>
-    <br>
-    {href}
-    """
-
-    # Render the PDF display or download link in Streamlit
-    st.markdown(pdf_display, unsafe_allow_html=True)
-
+        # Use pdf_viewer to render the PDF
+        pdf_viewer(input=binary_data, width=700, height=800)
+    else:
+        st.warning("No PDF file uploaded. Please upload a file to view it.")
 
 
 def check_openai_api_key(api_key):
