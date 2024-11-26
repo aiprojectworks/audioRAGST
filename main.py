@@ -347,7 +347,7 @@ def displayPDF(file):
         # Validate the PDF file content before rendering
         try:
             from PyPDF2 import PdfReader
-            pdf_reader = PdfReader(io.BytesIO(binary))
+            pdf_reader = PdfReader(io.BytesIO(binary))  # Use io.BytesIO for binary content
             assert len(pdf_reader.pages) > 0, "PDF file has no readable pages."
         except Exception as e:
             st.error(f"Invalid PDF file: {e}")
@@ -388,6 +388,12 @@ def displayPDF(file):
             "resolution_boost": resolution_boost
         })
 
+        # Validate `pages_to_render` for `pdf_viewer`
+        if not page_selection:
+            from PyPDF2 import PdfReader
+            pdf_reader = PdfReader(io.BytesIO(binary))
+            page_selection = list(range(len(pdf_reader.pages)))  # Default to all pages if none selected
+
         # Rendering the PDF
         st.write("Rendering PDF...")
         try:
@@ -398,7 +404,7 @@ def displayPDF(file):
                 annotations=annotations if annotations else None,  # Default to None if empty
                 pages_vertical_spacing=pages_vertical_spacing,
                 annotation_outline_size=annotation_thickness,
-                pages_to_render=page_selection if page_selection else None,  # Default to None if empty
+                pages_to_render=page_selection if page_selection else None,
                 render_text=enable_text,
                 resolution_boost=resolution_boost
             )
@@ -407,8 +413,6 @@ def displayPDF(file):
 
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
-
-
 
 
 def check_openai_api_key(api_key):
