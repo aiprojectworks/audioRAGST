@@ -345,20 +345,23 @@ def displayPDF(file):
 
         st.session_state['binary'] = binary  # Store for session reuse
 
-        # Dummy annotations list (in actual implementation, annotations should come from processing the file)
+        # Ensure annotations are a list
         annotations = st.session_state.get('annotations', [])
-        if not isinstance(annotations, list):
-            st.error("Annotations are not in the correct format. Expected a list of annotations.")
-            return
+        if annotations is None:
+            annotations = []  # Default to empty list
+
+        # Ensure page_selection is a list
+        page_selection = st.session_state.get('page_selection', [])
+        if page_selection is None:
+            page_selection = []
 
         # Dynamic settings from Streamlit UI
         width = st.session_state.get('pdf_width', 700)
-        height = st.session_state.get('pdf_height', -1)  # Use full height if -1
+        height = st.session_state.get('pdf_height', -1)
         annotation_thickness = st.session_state.get('annotation_thickness', 1)
         pages_vertical_spacing = st.session_state.get('pages_vertical_spacing', 2)
         resolution_boost = st.session_state.get('resolution_boost', 1)
         enable_text = st.session_state.get('enable_text', False)
-        page_selection = st.session_state.get('page_selection', [])  # Defaults to all pages
 
         # Rendering the PDF with options
         st.write("Rendering PDF...")
@@ -366,11 +369,11 @@ def displayPDF(file):
             pdf_viewer(
                 input=binary,
                 width=width,
-                height=height if height > -1 else None,  # Automatically adjust height if not specified
+                height=height if height > -1 else None,
                 annotations=annotations,
                 pages_vertical_spacing=pages_vertical_spacing,
                 annotation_outline_size=annotation_thickness,
-                pages_to_render=page_selection if page_selection else None,  # Render all pages by default
+                pages_to_render=page_selection if page_selection else None,
                 render_text=enable_text,
                 resolution_boost=resolution_boost
             )
@@ -379,6 +382,7 @@ def displayPDF(file):
 
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
