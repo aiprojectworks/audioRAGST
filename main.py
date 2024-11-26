@@ -321,17 +321,26 @@ def handle_userinput(user_question):
     
 #     user_question = st.text_input("Ask a question about your documents:", on_change=submit, key='widget', )
 
+# def displayPDF(file):
+#     with open(file, "rb") as f:
+#         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+#     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+#     st.markdown(pdf_display, unsafe_allow_html=True)
+
 def displayPDF(file):
+    # Open the PDF file in binary mode
     with open(file, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            tmp_file.write(base64_pdf)
-            temp_file_path = tmp_file.name
+        pdf_content = f.read()
+
+    # Write the binary content to a temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+        tmp_file.write(pdf_content)  # Write the raw binary content (not base64-encoded)
+        temp_file_path = tmp_file.name  # Get the path of the temporary file
+
+    # Use the file:// URI to display the PDF in an iframe
     pdf_display = f'<iframe src="file://{temp_file_path}" width="700" height="600" type="application/pdf"></iframe>'
     st.markdown(pdf_display, unsafe_allow_html=True)
 
-    # pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
-    # st.markdown(pdf_display, unsafe_allow_html=True)
 
 def check_openai_api_key(api_key):
     client = openai.OpenAI(api_key=api_key)
