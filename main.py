@@ -331,16 +331,46 @@ def handle_userinput(user_question):
 
 
 def displayPDF(file):
-    with open(file, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-    # pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
-    pdf_display = f"""<embed
-        class="pdfobject"
-        type="application/pdf"
-        title="Embedded PDF"
-        src="data:application/pdf;base64,{base64_pdf}"
-        style="overflow: auto; width: 100%; height: 100%;">"""
-    st.markdown(pdf_display, unsafe_allow_html=True)
+    binary = file.read()
+    st.session_state['binary'] = binary  # Store for session reuse
+
+    # Dummy annotations list (in actual implementation, annotations should come from processing the file)
+    annotations = st.session_state.get('annotations', [])
+
+    # Dynamic settings from Streamlit UI
+    width = st.session_state.get('pdf_width', 700)
+    height = st.session_state.get('pdf_height', -1)
+    annotation_thickness = st.session_state.get('annotation_thickness', 1)
+    pages_vertical_spacing = st.session_state.get('pages_vertical_spacing', 2)
+    resolution_boost = st.session_state.get('resolution_boost', 1)
+    enable_text = st.session_state.get('enable_text', False)
+    page_selection = st.session_state.get('page_selection', [])
+
+    # Rendering the PDF with options
+    st.write("Rendering PDF...")
+    if height > -1:
+        pdf_viewer(
+            input=binary,
+            width=width,
+            height=height,
+            annotations=annotations,
+            pages_vertical_spacing=pages_vertical_spacing,
+            annotation_outline_size=annotation_thickness,
+            pages_to_render=page_selection,
+            render_text=enable_text,
+            resolution_boost=resolution_boost
+        )
+    else:
+        pdf_viewer(
+            input=binary,
+            width=width,
+            annotations=annotations,
+            pages_vertical_spacing=pages_vertical_spacing,
+            annotation_outline_size=annotation_thickness,
+            pages_to_render=page_selection,
+            render_text=enable_text,
+            resolution_boost=resolution_boost
+        )
 
 
 
