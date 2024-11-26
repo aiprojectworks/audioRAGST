@@ -27,8 +27,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
-from streamlit_pdf_viewer import pdf_viewer
-
+import tempfile
 
 
 css = """
@@ -323,11 +322,39 @@ def handle_userinput(user_question):
     
 #     user_question = st.text_input("Ask a question about your documents:", on_change=submit, key='widget', )
 
-def displayPDF(file):
-    with open(file, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
+# def displayPDF(file):
+#     with open(file, "rb") as f:
+#         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+#     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+#     st.markdown(pdf_display, unsafe_allow_html=True)
+
+def displayPDF(file_bytes, file_name="uploaded_file.pdf"):
+    """
+    Render a PDF using PDF.js
+    :param file_bytes: Byte content of the PDF file
+    :param file_name: File name for the temporary file
+    """
+    # Save file to a temporary location
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+        temp_file.write(file_bytes)
+        temp_file_path = temp_file.name
+
+    # Encode the temporary file path for the PDF.js viewer
+    encoded_path = f"file://{os.path.abspath(temp_file_path)}"
+
+    # Render the PDF using PDF.js in an iframe
+    pdfjs_url = "https://mozilla.github.io/pdf.js/web/viewer.html"
+    st.markdown(
+        f"""
+        <iframe 
+            src="{pdfjs_url}?file={encoded_path}" 
+            width="100%" 
+            height="600px" 
+            style="border:none;">
+        </iframe>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def check_openai_api_key(api_key):
