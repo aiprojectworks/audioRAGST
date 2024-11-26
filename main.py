@@ -27,6 +27,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
+import tempfile
 
 
 css = """
@@ -323,8 +324,14 @@ def handle_userinput(user_question):
 def displayPDF(file):
     with open(file, "rb") as f:
         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(base64_pdf)
+            temp_file_path = tmp_file.name
+    pdf_display = f'<iframe src="file://{temp_file_path}" width="700" height="600" type="application/pdf"></iframe>'
     st.markdown(pdf_display, unsafe_allow_html=True)
+
+    # pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+    # st.markdown(pdf_display, unsafe_allow_html=True)
 
 def check_openai_api_key(api_key):
     client = openai.OpenAI(api_key=api_key)
