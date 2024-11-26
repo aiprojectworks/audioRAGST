@@ -330,31 +330,34 @@ def handle_userinput(user_question):
 #     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
-def displayPDF(file):
+def displayPDF(file, width=700, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
     try:
-        # Read the PDF file
+        # Determine the input binary data
         if isinstance(file, str):
             if not file.lower().endswith(".pdf"):
                 raise ValueError("The file is not a valid PDF.")
-            try:
-                with open(file, "rb") as f:
-                    pdf_data = f.read()
-            except FileNotFoundError:
-                raise FileNotFoundError(f"File not found: {file}")
-            except IOError as e:
-                raise IOError(f"Error reading the file: {e}")
+            # Read the binary content of the file
+            with open(file, "rb") as f:
+                pdf_binary = f.read()
         else:
-            if not hasattr(file, "read"):
+            if not hasattr(file, "read") or not hasattr(file, "name"):
                 raise ValueError("Provided file is not a valid file-like object.")
-            try:
-                pdf_data = file.read()
-                if not file.name.lower().endswith(".pdf"):
-                    raise ValueError("The uploaded file is not a PDF.")
-            except Exception as e:
-                raise IOError(f"Error reading the uploaded file: {e}")
+            if not file.name.lower().endswith(".pdf"):
+                raise ValueError("The uploaded file is not a PDF.")
+            # Read the binary content of the uploaded file
+            pdf_binary = file.read()
 
-        # Use the streamlit-pdf-viewer to display the PDF
-        pdf_viewer(data=pdf_data, width=700, height=600)
+        # Use the pdf_viewer with binary data as input
+        pdf_viewer(
+            input=pdf_binary,
+            width=width,
+            height=height,
+            annotations=annotations,
+            pages_vertical_spacing=pages_vertical_spacing,
+            annotation_outline_size=annotation_thickness,
+            render_text=enable_text,
+            resolution_boost=resolution_boost
+        )
 
     except FileNotFoundError as e:
         st.error(f"File error: {e}")
