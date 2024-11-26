@@ -327,33 +327,55 @@ def handle_userinput(user_question):
 #     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
+import os
+import tempfile
+import streamlit as st
+from PyPDF2.errors import PdfReadError
+from PyPDF2 import PdfReader
+
 def displayPDF(file_bytes, file_name="uploaded_file.pdf"):
-    """
-    Render a PDF using PDF.js
-    :param file_bytes: Byte content of the PDF file
-    :param file_name: File name for the temporary file
-    """
-    # Save file to a temporary location
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-        temp_file.write(file_bytes)
-        temp_file_path = temp_file.name
+    try:
+        # Validate the PDF content by trying to read it with PyPDF2
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_validation_file:
+            temp_validation_file.write(file_bytes)
+            temp_validation_file_path = temp_validation_file.name
 
-    # Encode the temporary file path for the PDF.js viewer
-    encoded_path = f"file://{os.path.abspath(temp_file_path)}"
+        # Attempt to parse the PDF to ensure it's valid
+        try:
+            PdfReader(temp_validation_file_path)
+        except PdfReadError as e:
+            st.error(f"The uploaded file is not a valid PDF or is corrupted. Error: {e}")
+            return
+        except Exception as e:
+            st.error(f"An unexpected error occurred while validating the PDF. Error: {e}")
+            return
 
-    # Render the PDF using PDF.js in an iframe
-    pdfjs_url = "https://mozilla.github.io/pdf.js/web/viewer.html"
-    st.markdown(
-        f"""
-        <iframe 
-            src="{pdfjs_url}?file={encoded_path}" 
-            width="100%" 
-            height="600px" 
-            style="border:none;">
-        </iframe>
-        """,
-        unsafe_allow_html=True,
-    )
+        # Save the valid PDF content to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(file_bytes)
+            temp_file_path = temp_file.name
+
+        # Encode the temporary file path for the PDF.js viewer
+        encoded_path = f"file://{os.path.abspath(temp_file_path)}"
+
+        # Render the PDF using PDF.js in an iframe
+        pdfjs_url = "https://mozilla.github.io/pdf.js/web/viewer.html"
+        st.markdown(
+            f"""
+            <iframe 
+                src="{pdfjs_url}?file={encoded_path}" 
+                width="100%" 
+                height="600px" 
+                style="border:none;">
+            </iframe>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    except OSError as os_error:
+        st.error(f"Error while saving or accessing the temporary file. Details: {os_error}")
+    except Exception as general_error:
+        st.error(f"An unexpected error occurred. Details: {general_error}")
 
 
 def check_openai_api_key(api_key):
