@@ -331,47 +331,70 @@ def handle_userinput(user_question):
 
 
 def displayPDF(file):
-    binary = file.read()
-    st.session_state['binary'] = binary  # Store for session reuse
+    try:
+        # Check if the file is not None and has a valid name
+        if not file or not file.name.endswith(".pdf"):
+            st.error("Invalid file type. Please upload a PDF.")
+            return
 
-    # Dummy annotations list (in actual implementation, annotations should come from processing the file)
-    annotations = st.session_state.get('annotations', [])
+        binary = file.read()
+        if not binary:
+            st.error("Failed to read the file. Please try uploading again.")
+            return
 
-    # Dynamic settings from Streamlit UI
-    width = st.session_state.get('pdf_width', 700)
-    height = st.session_state.get('pdf_height', -1)
-    annotation_thickness = st.session_state.get('annotation_thickness', 1)
-    pages_vertical_spacing = st.session_state.get('pages_vertical_spacing', 2)
-    resolution_boost = st.session_state.get('resolution_boost', 1)
-    enable_text = st.session_state.get('enable_text', False)
-    page_selection = st.session_state.get('page_selection', [])
+        st.session_state['binary'] = binary  # Store for session reuse
 
-    # Rendering the PDF with options
-    st.write("Rendering PDF...")
-    if height > -1:
-        pdf_viewer(
-            input=binary,
-            width=width,
-            height=height,
-            annotations=annotations,
-            pages_vertical_spacing=pages_vertical_spacing,
-            annotation_outline_size=annotation_thickness,
-            pages_to_render=page_selection,
-            render_text=enable_text,
-            resolution_boost=resolution_boost
-        )
-    else:
-        pdf_viewer(
-            input=binary,
-            width=width,
-            annotations=annotations,
-            pages_vertical_spacing=pages_vertical_spacing,
-            annotation_outline_size=annotation_thickness,
-            pages_to_render=page_selection,
-            render_text=enable_text,
-            resolution_boost=resolution_boost
-        )
+        # Dummy annotations list (in actual implementation, annotations should come from processing the file)
+        annotations = st.session_state.get('annotations', [])
+        if not isinstance(annotations, list):
+            st.error("Annotations are not in the correct format. Expected a list of annotations.")
+            return
 
+        # Dynamic settings from Streamlit UI
+        width = st.session_state.get('pdf_width', 700)
+        height = st.session_state.get('pdf_height', -1)
+        annotation_thickness = st.session_state.get('annotation_thickness', 1)
+        pages_vertical_spacing = st.session_state.get('pages_vertical_spacing', 2)
+        resolution_boost = st.session_state.get('resolution_boost', 1)
+        enable_text = st.session_state.get('enable_text', False)
+        page_selection = st.session_state.get('page_selection', [])
+
+        # Check if binary content exists before rendering
+        if not st.session_state['binary']:
+            st.error("No file content found for rendering. Please upload a valid PDF.")
+            return
+
+        # Rendering the PDF with options
+        st.write("Rendering PDF...")
+        try:
+            if height > -1:
+                pdf_viewer(
+                    input=binary,
+                    width=width,
+                    height=height,
+                    annotations=annotations,
+                    pages_vertical_spacing=pages_vertical_spacing,
+                    annotation_outline_size=annotation_thickness,
+                    pages_to_render=page_selection,
+                    render_text=enable_text,
+                    resolution_boost=resolution_boost
+                )
+            else:
+                pdf_viewer(
+                    input=binary,
+                    width=width,
+                    annotations=annotations,
+                    pages_vertical_spacing=pages_vertical_spacing,
+                    annotation_outline_size=annotation_thickness,
+                    pages_to_render=page_selection,
+                    render_text=enable_text,
+                    resolution_boost=resolution_boost
+                )
+        except Exception as render_error:
+            st.error(f"Error rendering the PDF: {render_error}")
+
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
 
 
 def check_openai_api_key(api_key):
