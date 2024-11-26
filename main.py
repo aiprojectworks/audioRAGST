@@ -4,6 +4,7 @@ import os
 from openai import OpenAI
 import openai
 import streamlit as st
+from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -14,15 +15,20 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, ID3NoHeaderError
 from mutagen.mp3 import MP3, HeaderNotFoundError
 from pydub import AudioSegment
+# from fpdf import FPDF
+# from fpdf.enums import Align
+import base64
 from openai import AuthenticationError, APIConnectionError
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+import ffmpeg
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-import os
-import tempfile
-from PyPDF2.errors import PdfReadError
-from PyPDF2 import PdfReader
+# from htmlTemplates import css, bot_template, user_template
+from streamlit_pdf_viewer import pdf_viewer
+
 
 
 css = """
@@ -75,6 +81,7 @@ user_template = """
 # client = SecretClient(vault_url=os.environ["AZURE_KEYVAULT_URL"], credential=credential)
 # key = client.get_secret("OpenAI-API-Key")
 os.environ["OPENAI_API_KEY"] = st.secrets["API_KEY"]
+# os.environ["ADOBE_API_KEY"] = st.secrets["ADOBE_API_KEY"]
 # st.write(os.environ["OPENAI_API_KEY"])
 openai_model = "gpt-4o"
 transcribe_temp=0.3
@@ -316,59 +323,13 @@ def handle_userinput(user_question):
     
 #     user_question = st.text_input("Ask a question about your documents:", on_change=submit, key='widget', )
 
-# def displayPDF(file):
-#     with open(file, "rb") as f:
-#         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-#     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
-#     st.markdown(pdf_display, unsafe_allow_html=True)
+def displayPDF(file):
+    with open(file, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="600" type="application/pdf"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
-def displayPDF(file_bytes, file_name="uploaded_file.pdf"):
-    """
-    Render a PDF using PDF.js with error handling.
-    :param file_bytes: Byte content of the PDF file
-    :param file_name: File name for the temporary file
-    """
-    try:
-        # Debugging: Print file type to ensure it's bytes
-        if not isinstance(file_bytes, (bytes, bytearray)):
-            raise ValueError("Invalid file format: file_bytes must be in binary format (bytes).")
 
-        # Save the binary content to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-            temp_file.write(file_bytes)
-            temp_file_path = temp_file.name
-
-        # Validate the file as a PDF
-        try:
-            PdfReader(temp_file_path)  # Validate the file
-        except PdfReadError:
-            st.error("The uploaded file is not a valid PDF or is corrupted.")
-            return
-        except Exception as e:
-            st.error(f"An error occurred while validating the PDF. Details: {e}")
-            return
-
-        # Render the PDF using PDF.js in an iframe
-        pdfjs_url = "https://mozilla.github.io/pdf.js/web/viewer.html"
-        encoded_path = f"file://{os.path.abspath(temp_file_path)}"
-        st.markdown(
-            f"""
-            <iframe 
-                src="{pdfjs_url}?file={encoded_path}" 
-                width="100%" 
-                height="600px" 
-                style="border:none;">
-            </iframe>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    except ValueError as ve:
-        st.error(f"Error: {ve}")
-    except OSError as os_error:
-        st.error(f"Error while saving or accessing the temporary file. Details: {os_error}")
-    except Exception as general_error:
-        st.error(f"An unexpected error occurred. Details: {general_error}")
 
 
 def check_openai_api_key(api_key):
@@ -436,34 +397,18 @@ def main():
             st.subheader("Upload Your PDF Document")
             pdf_docs = st.file_uploader("Upload your PDF here and click on 'Process'", accept_multiple_files=False, type="pdf")
             pdf_doc_for_ai = [pdf_docs]
-            # if st.button("Process PDF"):
-            #     if pdf_doc_for_ai != [None]:
-            #         with st.spinner("Processing"):
-            #             upload_method = True
-            #             display_is_true = True
-            #             pdf_file_path = os.path.join(os.getcwd(), pdf_docs.name)  # Get the current directory and file name
-            #             with open(pdf_file_path, "wb") as f:
-            #                 f.write(pdf_docs.getbuffer())
-            #             rag_process(pdf_doc_for_ai)
-            #         st.write(f"Using PDF File: {pdf_doc_for_ai[-1].name}")
-            #     else:
-            #         st.error("No PDF Found!")
             if st.button("Process PDF"):
-                if pdf_docs is not None:
-                    with st.spinner("Processing..."):
-                        try:
-                            # Ensure file content is read in binary format
-                            pdf_bytes = pdf_docs.read()  # This will read the file content as bytes
-
-                            # Debugging: Print file type to confirm it’s in binary
-                            st.write(f"File type: {type(pdf_bytes)}")  # Should output <class 'bytes'>
-
-                            # Pass the binary content to displayPDF
-                            displayPDF(pdf_bytes, pdf_docs.name)
-
-                            st.success("PDF successfully processed!")
-                        except Exception as e:
-                            st.error(f"An unexpected error occurred: {e}")
+                if pdf_doc_for_ai != [None]:
+                    with st.spinner("Processing"):
+                        upload_method = True
+                        display_is_true = True
+                        pdf_file_path = os.path.join(os.getcwd(), pdf_docs.name)  # Get the current directory and file name
+                        with open(pdf_file_path, "wb") as f:
+                            f.write(pdf_docs.getbuffer())
+                        rag_process(pdf_doc_for_ai)
+                    st.write(f"Using PDF File: {pdf_doc_for_ai[-1].name}")
+                else:
+                    st.error("No PDF Found!")
 
     st.write(css, unsafe_allow_html=True)
 
