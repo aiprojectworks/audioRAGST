@@ -332,12 +332,13 @@ def handle_userinput(user_question):
 
 def displayPDF(file):
     try:
-        # Check if the file is not None and has a valid name
-        if not file or not file.name.endswith(".pdf"):
-            st.error("Invalid file type. Please upload a PDF.")
-            return
+        # Check if `file` is a string (file path) or a file-like object
+        if isinstance(file, str):
+            with open(file, "rb") as f:
+                binary = f.read()
+        else:
+            binary = file.read()
 
-        binary = file.read()
         if not binary:
             st.error("Failed to read the file. Please try uploading again.")
             return
@@ -359,11 +360,6 @@ def displayPDF(file):
         enable_text = st.session_state.get('enable_text', False)
         page_selection = st.session_state.get('page_selection', [])  # Defaults to all pages
 
-        # Check if binary content exists before rendering
-        if not st.session_state['binary']:
-            st.error("No file content found for rendering. Please upload a valid PDF.")
-            return
-
         # Rendering the PDF with options
         st.write("Rendering PDF...")
         try:
@@ -383,6 +379,7 @@ def displayPDF(file):
 
     except Exception as e:
         st.error(f"An unexpected error occurred: {e}")
+
 
 
 
@@ -519,13 +516,21 @@ def main():
         # create_log_entry("Service Request: Fail (No Files Uploaded)")
         st.error("No Files Uploaded, Please Try Again!")
 
+    # elif display_is_true and upload_method:
+    #     if isinstance(pdf_docs, str):
+    #         displayPDF(pdf_docs)
+    #         os.remove(pdf_docs)
+    #     else:
+    #         displayPDF(pdf_docs.name)
+    #         os.remove(pdf_docs.name)
     elif display_is_true and upload_method:
+        # Check if `pdf_docs` is already a file-like object
         if isinstance(pdf_docs, str):
-            displayPDF(pdf_docs)
-            os.remove(pdf_docs)
+            displayPDF(pdf_docs)  # Pass the file path for handling
+            os.remove(pdf_docs)  # Cleanup
         else:
-            displayPDF(pdf_docs.name)
-            os.remove(pdf_docs.name)
+            displayPDF(pdf_docs)  # Directly use the file-like object
+
         document_interaction()
 
 
