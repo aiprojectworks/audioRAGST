@@ -366,7 +366,7 @@ def displayPDF(file, width=800, height=600, enable_text=True, resolution_boost=1
                 height: 100%;
             }
             .pdf-viewer {
-                margin: auto;
+                padding-left: 100px;
             }
         </style>
         """,
