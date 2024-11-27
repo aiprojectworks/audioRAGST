@@ -326,7 +326,7 @@ def handle_userinput(user_question):
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
-def displayPDF(file, width=5000, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
+def displayPDF(file, width=1000, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
     # Display the PDF viewer with the specified parameters
     try:
         # Read binary content
