@@ -331,7 +331,7 @@ def handle_userinput(user_question):
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
-def displayPDF(file, width=5000, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
+def displayPDF(file, width='100%', height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
     """
     Display a PDF file using the streamlit-pdf-viewer library, centered and filling the container.
 
