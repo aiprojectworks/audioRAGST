@@ -343,23 +343,6 @@ def displayPDF(file, width=1000, height=600, enable_text=True, resolution_boost=
             pdf_binary = file.read()
 
         # Center the PDF viewer with custom CSS
-        st.markdown(
-        """
-        <style>
-            .pdf-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                width: 100%;
-                height: 100%;
-            }
-            .pdf-viewer {
-                padding-left: 100px;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True,
-        )
         st.markdown('<div class="pdf-container">', unsafe_allow_html = True)
 
         # Render the PDF viewer with specified dimensions
