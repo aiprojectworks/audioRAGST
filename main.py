@@ -356,7 +356,7 @@ def displayPDF(file, width=800, height=600, enable_text=True, resolution_boost=1
 
         # Center the PDF viewer with custom CSS
         st.markdown(
-        f"""
+        """
         <style>
             .pdf-container {
                 display: flex;
