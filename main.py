@@ -13,21 +13,16 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, ID3NoHeaderError
-from mutagen.mp3 import MP3, HeaderNotFoundError
+from mutagen.mp3 import HeaderNotFoundError
 from pydub import AudioSegment
 # from fpdf import FPDF
 # from fpdf.enums import Align
-import base64
 from openai import AuthenticationError, APIConnectionError
-from azure.identity import DefaultAzureCredential
-from azure.keyvault.secrets import SecretClient
-import ffmpeg
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
-import PyPDF2
 from streamlit_pdf_viewer import pdf_viewer
 
 
