@@ -24,7 +24,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
 from streamlit_pdf_viewer import pdf_viewer
-
+from pymupdf import fitz
 
 
 css = """
@@ -327,7 +327,6 @@ def handle_userinput(user_question):
 
 
 def displayPDF(file, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
-    # Display the PDF viewer with the specified parameters
     try:
         # Read binary content
         if isinstance(file, str):
@@ -342,14 +341,20 @@ def displayPDF(file, enable_text=True, resolution_boost=1, annotations=None, pag
                 raise ValueError("The uploaded file is not a PDF.")
             pdf_binary = file.read()
 
+        # Calculate the height of the PDF
+        pdf_reader = PdfReader(file)
+        num_pages = len(pdf_reader.pages)
+        page_height = pdf_reader.pages[0].mediabox[3]  # Get the height of the first page
+        total_height = num_pages * page_height
+
         # Center the PDF viewer with custom CSS
-        st.markdown('<div class="pdf-container">', unsafe_allow_html = True)
+        st.markdown('<div class="pdf-container">', unsafe_allow_html=True)
 
         # Render the PDF viewer with specified dimensions
         pdf_viewer(
             input=pdf_binary,
             width=1000,
-            height=10000,
+            height=total_height,
             annotations=annotations,
             pages_vertical_spacing=pages_vertical_spacing,
             annotation_outline_size=annotation_thickness,
