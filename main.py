@@ -326,7 +326,7 @@ def handle_userinput(user_question):
 #     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
-def displayPDF(file, width=10000, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
+def displayPDF(file, width=800, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
     """
     Display a PDF file using the streamlit-pdf-viewer library, centered and filling the container.
 
@@ -356,36 +356,34 @@ def displayPDF(file, width=10000, height=600, enable_text=True, resolution_boost
 
         # Center the PDF viewer with custom CSS
         st.markdown(
-            """
-            <style>
-                .center-pdf {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    width: 100%;
-                }
-                 iframe {
-                    width: 100%;
-                    height: 600px; /* Adjust height as needed */
-                    border: none;
-                }
-            </style>
-            """,
-            unsafe_allow_html=True,
+        f"""
+        <style>
+            .pdf-container {{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                height: 100%;
+            }}
+        </style>
+        <div class="pdf-container">
+        """,
+        unsafe_allow_html=True,
         )
 
-        # Wrap the viewer in a centered div
-        st.markdown('<div class="center-pdf">', unsafe_allow_html=True)
+        # Render the PDF viewer with specified dimensions
         pdf_viewer(
             input=pdf_binary,
-            width=int(width),  # Convert width to integer
-            height=int(height),  # Convert height to integer
+            width=int(width),
+            height=int(height),
             annotations=annotations,
             pages_vertical_spacing=pages_vertical_spacing,
             annotation_outline_size=annotation_thickness,
             render_text=enable_text,
-            resolution_boost=resolution_boost
+            resolution_boost=resolution_boost,
         )
+
+        # Close the div
         st.markdown("</div>", unsafe_allow_html=True)
 
     except FileNotFoundError as e:
