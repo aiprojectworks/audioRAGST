@@ -349,7 +349,7 @@ def displayPDF(file, width=1000, height=600, enable_text=True, resolution_boost=
         pdf_viewer(
             input=pdf_binary,
             width=1000,
-            height=int(height),
+            height=3000,
             annotations=annotations,
             pages_vertical_spacing=pages_vertical_spacing,
             annotation_outline_size=annotation_thickness,
