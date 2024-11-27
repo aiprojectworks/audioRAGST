@@ -344,7 +344,7 @@ def displayPDF(file, enable_text=True, resolution_boost=1, annotations=None, pag
         pdf_reader = PdfReader(file)
         num_pages = len(pdf_reader.pages)
         page_height = pdf_reader.pages[0].mediabox[3]  # Get the height of the first page
-        total_height = num_pages * page_height
+        total_height = int(num_pages * page_height)
 
         # Center the PDF viewer with custom CSS
         st.markdown('<div class="pdf-container">', unsafe_allow_html=True)
