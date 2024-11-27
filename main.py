@@ -346,18 +346,21 @@ def displayPDF(file, width=800, height=600, enable_text=True, resolution_boost=1
         st.markdown(
         """
         <style>
-            .pdf-container {{
+            .pdf-container {
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 width: 100%;
                 height: 100%;
-            }}
+            }
+            .pdf-viewer {
+                margin: auto;
+            }
         </style>
-        <div class="pdf-container">
         """,
         unsafe_allow_html=True,
         )
+        st.markdown('<div class="pdf-container">', unsafe_allow_html = True)
 
         # Render the PDF viewer with specified dimensions
         pdf_viewer(
