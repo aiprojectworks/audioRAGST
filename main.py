@@ -263,7 +263,7 @@ def rag_process(pdf_docs):
         st.session_state.conversation = get_conversation_chain(
             vectorstore)
     except Exception as e:
-        st.warning(f"Warning: This could be an image-based PDF File")
+        st.warning(f"Warning: This could be an image-based PDF File. Error: {e}")
 
 @st.fragment
 def document_interaction():
@@ -301,7 +301,7 @@ def handle_userinput(user_question):
         download_history_button()
 
     except Exception as e:
-        st.error(f"The words in this PDF File can't be read by the AI.")
+        st.error(f"The words in this PDF File can't be read by the AI. Error: {e}")
 
 # @st.fragment
 # def submit():
@@ -429,7 +429,7 @@ def main():
     st.set_page_config(page_title="Chat with a PDF",
                        page_icon="https://www.ippfa.com/wp-content/uploads/2019/12/eLogo.png")
     api_key = os.environ['OPENAI_API_KEY']
-    if check_openai_api_key(api_key) == False:
+    if not check_openai_api_key(api_key):
         api_key = st.sidebar.text_input("Enter your OpenAI API key:", type="password")
 
     # st.write(api_key)
@@ -572,7 +572,7 @@ def main():
                     except APIConnectionError:
                         st.error("NO API Key! Please enter an API Key!")
                         continue
-                    except Exception as g:
+                    except Exception:
                         st.error(f"Error processing file: {audio_file[2:]} - Please Try again! (Poor audio quality may be the cause)")
                         continue
     st.markdown("""
