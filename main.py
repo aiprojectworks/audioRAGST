@@ -496,6 +496,8 @@ def main():
     )
 
     if uploaded_file is not None:
+        # Display audio player for the uploaded file
+        st.audio(uploaded_file, format='audio/wav' if uploaded_file.type == 'audio/wav' else 'audio/mp3')
         # Track current file
         current_file_name = uploaded_file.name
 
