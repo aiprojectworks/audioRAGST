@@ -327,19 +327,7 @@ def handle_userinput(user_question):
 
 
 def displayPDF(file, width=800, height=600, enable_text=True, resolution_boost=1, annotations=None, pages_vertical_spacing=10, annotation_thickness=2):
-    """
-    Display a PDF file using the streamlit-pdf-viewer library, centered and filling the container.
 
-    Parameters:
-        file (str or file-like object): Path to the PDF file or a file-like object.
-        width (int): Width of the viewer (default 800 pixels).
-        height (int): Height of the viewer (default 600 pixels).
-        enable_text (bool): Enable or disable text rendering.
-        resolution_boost (int): Boost resolution for better clarity (1 is default).
-        annotations (list): Optional annotations to display on the PDF.
-        pages_vertical_spacing (int): Vertical spacing between pages.
-        annotation_thickness (int): Outline thickness of annotations.
-    """
     try:
         # Read binary content
         if isinstance(file, str):
@@ -356,7 +344,7 @@ def displayPDF(file, width=800, height=600, enable_text=True, resolution_boost=1
 
         # Center the PDF viewer with custom CSS
         st.markdown(
-        f"""
+        """
         <style>
             .pdf-container {{
                 display: flex;
