@@ -365,7 +365,7 @@ def displayPDF(file, width=1000, height=600, enable_text=True, resolution_boost=
         # Render the PDF viewer with specified dimensions
         pdf_viewer(
             input=pdf_binary,
-            width=int(width),
+            width=1000,
             height=int(height),
             annotations=annotations,
             pages_vertical_spacing=pages_vertical_spacing,
