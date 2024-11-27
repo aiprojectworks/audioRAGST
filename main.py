@@ -369,14 +369,9 @@ def displayPDF(file, width=10000, height=600, enable_text=True, resolution_boost
                     align-items: center;
                     width: 100%;
                 }
-                 iframe {
-                    width: 100%;
-                    height: 600px; /* Adjust height as needed */
-                    border: none;
-                }
             </style>
             """,
-            unsafe_allow_html=True,
+            unsafe_allow_html=True
         )
 
         # Wrap the viewer in a centered div
