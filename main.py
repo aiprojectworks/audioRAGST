@@ -24,7 +24,6 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 # from htmlTemplates import css, bot_template, user_template
 from streamlit_pdf_viewer import pdf_viewer
-from pymupdf import fitz
 
 
 css = """
